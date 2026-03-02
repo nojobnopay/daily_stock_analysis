@@ -3,7 +3,7 @@ name: 每日股票分析
 on:
   # 定时触发 - 每天北京时间 18:00 (UTC 10:00)
   schedule:
-    - cron: '0 10 * * 1-5'     # 周一到周五，UTC 10:00 = 北京时间 18:00
+    - cron: '0 10 * * *'     # 周一到周五，UTC 10:00 = 北京时间 18:00
   
   # 手动触发
   workflow_dispatch:
@@ -41,6 +41,17 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          
+      - name: 周末自动跳过（仅 schedule）
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          DOW=$(TZ='Asia/Shanghai' date +%u)  # 1-7, Mon=1 ... Sun=7
+          NOW=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S %Z')
+          echo "Now: $NOW, day-of-week(1-7): $DOW"
+          if [ "$DOW" -ge 6 ]; then
+            echo "Weekend in Asia/Shanghai, skip analysis."
+            exit 0
+          fi
       
       - name: 安装依赖
         run: |
